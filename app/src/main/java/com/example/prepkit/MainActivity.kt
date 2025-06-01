@@ -6,14 +6,23 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import android.Manifest
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
+import android.net.wifi.p2p.WifiP2pManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -31,6 +40,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -77,11 +88,20 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     val latitude: State<Float> get() = _latitude
     val longitude: State<Float> get() = _longitude
 
-    private val locationPermissionLauncher = registerForActivityResult(
+    private val intentFilter = IntentFilter()
+
+    val permissions = listOf(
+        Manifest.permission.BLUETOOTH_SCAN,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.BLUETOOTH_CONNECT
+    )
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private val PermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == false
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == false
 
         if (fineLocationGranted || coarseLocationGranted) {
             Toast.makeText(this, "Location permission granted", Toast.LENGTH_SHORT).show()
@@ -90,21 +110,21 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
     }
 
-    private fun checkPermission() {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun checkPermission() {
         val fineLocation =
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarseLocation =
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
 
         if (fineLocation != PackageManager.PERMISSION_GRANTED || coarseLocation != PackageManager.PERMISSION_GRANTED) {
-            locationPermissionLauncher.launch(
+            PermissionLauncher.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.NEARBY_WIFI_DEVICES
                 )
             )
-        } else {
-            Toast.makeText(this, "Permissions already granted", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -138,6 +158,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             })
     }
 
+    private lateinit var channel: WifiP2pManager.Channel
+    private lateinit var manager: WifiP2pManager
+    var isWifiP2pEnabled = false
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -146,14 +171,35 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
+        intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION)
+
+        manager = getSystemService(WIFI_P2P_SERVICE) as WifiP2pManager
+        channel = manager.initialize(this, mainLooper, null)
+
+        val wifiManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        val channel = wifiManager.initialize(this, mainLooper, null)
+
         enableEdgeToEdge()
         setContent {
+            val wifiViewModel = remember { WifiViewModel() }
+            registerReceiver(
+                WifiStateReceiver(manager, channel, this, wifiViewModel),
+                intentFilter
+            )
             PrepKitTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     MainScreen(
                         azimuth = azimuth,
                         latitude = latitude,
-                        longitude = longitude
+                        longitude = longitude,
+                        context = this,
+                        viewModel = wifiViewModel,
+                        manager = wifiManager,
+                        channel = channel
                     )
                 }
             }
@@ -198,7 +244,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             }
         }
     }
-
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
         //
     }
@@ -210,7 +255,11 @@ fun MainScreen(
     navController: NavHostController = rememberAnimatedNavController(),
     azimuth: State<Float>,
     latitude: State<Float>,
-    longitude: State<Float>
+    longitude: State<Float>,
+    context: Context,
+    viewModel: WifiViewModel,
+    manager: WifiP2pManager,
+    channel: WifiP2pManager.Channel,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedNavHost(
@@ -229,7 +278,12 @@ fun MainScreen(
                 CompassScreen(azimuth, latitude, longitude,)
             }
             composable("contactScreen") {
-                ContactScreen()
+                ContactScreen(
+                    context = context,
+                    viewModel = viewModel,
+                    manager = manager,
+                    channel = channel
+                )
             }
             composable("survivalScreen") {
                 SurvivalScreen()
@@ -247,7 +301,6 @@ fun MainScreen(
         }
     }
 }
-
 
 @Composable
 fun CompUi(paddingValues: PaddingValues, modifier: Modifier, onImageClick: (String) -> Unit) {

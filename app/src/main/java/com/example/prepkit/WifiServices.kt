@@ -1,6 +1,7 @@
 package com.example.prepkit
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -10,11 +11,13 @@ import android.net.wifi.p2p.WifiP2pConfig
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pManager
 import android.util.Log
+import android.widget.EditText
 import android.widget.Toast
 import androidx.annotation.RequiresPermission
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 
 class WifiStateReceiver(
@@ -48,8 +51,13 @@ class WifiStateReceiver(
                         } else if (info.groupFormed) {
                             Log.d("ConnectionState", "Client")
                             Toast.makeText(activity, "Connected as Client", Toast.LENGTH_SHORT).show()
-                            Thread {
-                                WifiDirectSocketManager.startClient(info.groupOwnerAddress.hostAddress!!)
+                            showInputDialog("Send Msg") { userInput ->
+                                Thread {
+                                    WifiDirectSocketManager.startClient(
+                                        info.groupOwnerAddress.hostAddress!!,
+                                        userInput
+                                    )
+                                }.start()
                             }
                         }
                     }
@@ -65,9 +73,33 @@ class WifiStateReceiver(
             }
         }
     }
+    private fun showInputDialog(title: String, onInputReceived: (String) -> Unit) {
+        val editText = EditText(activity)
+        editText.hint = "Enter your message/configuration"
+
+        AlertDialog.Builder(activity)
+            .setTitle(title)
+            .setMessage("Please enter the required information:")
+            .setView(editText)
+            .setPositiveButton("OK") { dialog, _ ->
+                val userInput = editText.text.toString().trim()
+                if (userInput.isNotEmpty()) {
+                    onInputReceived(userInput)
+                } else {
+                    Toast.makeText(activity, "Input cannot be empty", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setCancelable(false)
+            .show()
+    }
 }
 
 class WifiViewModel : ViewModel() {
+
     var thisDevice by mutableStateOf<WifiP2pDevice?>(null)
         private set
 
@@ -130,7 +162,7 @@ object WifiDirectSocketManager {
         }
     }
 
-    fun startClient(hostAddress: String) {
+    fun startClient(hostAddress: String, msg: String) {
         try {
             val socket = java.net.Socket()
             socket.bind(null)
@@ -139,10 +171,8 @@ object WifiDirectSocketManager {
             val input = socket.getInputStream()
             val output = socket.getOutputStream()
 
-            // Example: Send data to server
-            output.write("Hello from client".toByteArray())
+            output.write(msg.toByteArray())
 
-            // Example: Read data from server
             val buffer = ByteArray(1024)
             val bytesRead = input.read(buffer)
             val message = String(buffer, 0, bytesRead)

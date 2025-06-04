@@ -11,7 +11,6 @@ composeBom = "2024.09.00"
 maplibre = "10.3.1"
 
 [libraries]
-maplibre = {group = "org.maplibre.gl", name = "android-sdk", version.ref = "maplibre"}
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

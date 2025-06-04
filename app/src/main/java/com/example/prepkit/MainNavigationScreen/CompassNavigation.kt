@@ -2,11 +2,13 @@ package com.example.prepkit.MainNavigationScreen
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -37,15 +39,16 @@ fun CompassScreen(azimuth: State<Float>, latitude: State<Float>, longitude: Stat
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .background(color = Color.Black)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.compass_image),
+        Icon(
+            painter = painterResource(id = R.drawable.compass),
             contentDescription = "Compass Arrow",
             modifier = Modifier
                 .size(400.dp)
                 .align(Alignment.Center)
-                .rotate(animatedAzimuth)
+                .rotate(animatedAzimuth),
+            tint = Color.White
         )
 
         Box(
@@ -58,7 +61,7 @@ fun CompassScreen(azimuth: State<Float>, latitude: State<Float>, longitude: Stat
 
             Text(
                 text = "Lat: ${degLatitude}° ${"%.0f".format(arcMinuteLatitude)}'",
-                color = Color.Black,
+                color = Color.White,
                 fontSize = 20.sp
             )
         }
@@ -72,7 +75,7 @@ fun CompassScreen(azimuth: State<Float>, latitude: State<Float>, longitude: Stat
         ) {
             Text(
                 text = "Long: ${degLongitude}° ${"%.0f".format(arcMinuteLongitude)}'",
-                color = Color.Black,
+                color = Color.White,
                 fontSize = 20.sp
             )
         }

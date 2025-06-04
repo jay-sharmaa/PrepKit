@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -18,6 +19,9 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Build
+import android.os.Looper
+import android.util.Log
+import android.view.WindowInsets
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -33,14 +37,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,25 +59,36 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.prepkit.MainNavigationScreen.CompassScreen
 import com.example.prepkit.MainNavigationScreen.ContactScreen
 import com.example.prepkit.MainNavigationScreen.HomeScreen
+import com.example.prepkit.MainNavigationScreen.InfoScreen
 import com.example.prepkit.MainNavigationScreen.SurvivalScreen
 import com.example.prepkit.ui.theme.PrepKitTheme
 import com.google.accompanist.navigation.animation.AnimatedNavHost
 import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity(), SensorEventListener {
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
@@ -107,6 +125,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             Toast.makeText(this, "Location permission granted", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show()
+            checkPermission()
         }
     }
 
@@ -142,20 +161,27 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             return
         }
 
-        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-            .addOnSuccessListener({ location: Location? ->
-                if (location != null) {
+        val locationRequest = LocationRequest.create().apply {
+            priority = Priority.PRIORITY_HIGH_ACCURACY
+            interval = 2000L
+            fastestInterval = 1000L
+        }
+
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { location ->
                     _latitude.value = location.latitude.toFloat()
                     _longitude.value = location.longitude.toFloat()
-                    Toast.makeText(this, "Lat: $latitude, Lon: $longitude", Toast.LENGTH_LONG)
-                        .show()
-                } else {
-                    Toast.makeText(this, "Location is null", Toast.LENGTH_SHORT).show()
+                    Log.d("Location", _latitude.value.toString())
                 }
-            })
-            .addOnFailureListener({
-                Toast.makeText(this, "Failed to get location", Toast.LENGTH_SHORT).show()
-            })
+            }
+        }
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
     }
 
     private lateinit var channel: WifiP2pManager.Channel
@@ -167,7 +193,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         checkPermission()
-        getCurrLocation()
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
@@ -180,16 +205,27 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         manager = getSystemService(WIFI_P2P_SERVICE) as WifiP2pManager
         channel = manager.initialize(this, mainLooper, null)
 
-        val wifiManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        val wifiManager = getSystemService(WIFI_P2P_SERVICE) as WifiP2pManager
         val channel = wifiManager.initialize(this, mainLooper, null)
-
+        getCurrLocation()
         enableEdgeToEdge()
+
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+
         setContent {
+
             val wifiViewModel = remember { WifiViewModel() }
             registerReceiver(
                 WifiStateReceiver(manager, channel, this, wifiViewModel),
                 intentFilter
             )
+            SideEffect {
+                val window = (this as Activity).window
+                window.statusBarColor = Color.Black.toArgb() // Set status bar color to black
+
+                WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+                // false means light icons (white), suitable for dark background
+            }
             PrepKitTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     MainScreen(
@@ -245,7 +281,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         }
     }
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
-        //
+
     }
 }
 
@@ -265,7 +301,7 @@ fun MainScreen(
         AnimatedNavHost(
             navController = navController,
             startDestination = "homeScreen",
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(androidx.compose.foundation.layout.WindowInsets.systemBars.asPaddingValues()),
             enterTransition = { slideInHorizontally(initialOffsetX = { 1000 }) },
             exitTransition = { slideOutHorizontally(targetOffsetX = { -1000 }) },
             popEnterTransition = { slideInHorizontally(initialOffsetX = { -1000 }) },
@@ -286,7 +322,7 @@ fun MainScreen(
                 )
             }
             composable("survivalScreen") {
-                SurvivalScreen()
+                InfoScreen()
             }
         }
 
@@ -319,7 +355,7 @@ fun CircleIcon(onImageClick: (String) -> Unit) {
     val images = listOf(
         R.drawable.homepin,
         R.drawable.compass,
-        R.drawable.contacts,
+        R.drawable.antenna,
         R.drawable.campfire
     )
 

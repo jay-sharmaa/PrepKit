@@ -40,6 +40,9 @@ android {
 }
 
 dependencies {
+    //map
+    implementation("org.maplibre.gl:android-sdk:11.5.1")
+
     //location and sensors
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
@@ -51,9 +54,7 @@ dependencies {
 
     //navigation and animation
     implementation("com.google.accompanist:accompanist-navigation-animation:0.34.0")
-
     implementation("androidx.compose.foundation:foundation:1.4.0")
-
     implementation ("androidx.compose.material3:material3:1.2.1")
 
     implementation(libs.androidx.core.ktx)

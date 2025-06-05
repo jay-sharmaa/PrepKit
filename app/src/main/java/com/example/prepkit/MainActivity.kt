@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
@@ -68,6 +69,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -85,7 +90,13 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import kotlinx.coroutines.delay
+import org.maplibre.android.MapLibre
+import org.maplibre.android.WellKnownTileServer
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.Style
 
 class MainActivity : ComponentActivity(), SensorEventListener {
 
@@ -172,7 +183,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 result.lastLocation?.let { location ->
                     _latitude.value = location.latitude.toFloat()
                     _longitude.value = location.longitude.toFloat()
-                    Log.d("Location", _latitude.value.toString())
+                    Log.d("Location", _latitude.value.toString() + " " + _longitude.value.toString())
                 }
             }
         }
@@ -221,11 +232,13 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             )
             SideEffect {
                 val window = (this as Activity).window
-                window.statusBarColor = Color.Black.toArgb() // Set status bar color to black
+                window.statusBarColor = Color.Black.toArgb()
 
                 WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
-                // false means light icons (white), suitable for dark background
             }
+
+            MapLibre.getInstance(applicationContext, null, WellKnownTileServer.MapLibre)
+
             PrepKitTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     MainScreen(
@@ -308,10 +321,10 @@ fun MainScreen(
             popExitTransition = { slideOutHorizontally(targetOffsetX = { 1000 }) }
         ) {
             composable("homeScreen") {
-                HomeScreen()
+                HomeScreen(azimuth, latitude, longitude)
             }
             composable("compassScreen") {
-                CompassScreen(azimuth, latitude, longitude,)
+                CompassScreen(azimuth, latitude, longitude)
             }
             composable("contactScreen") {
                 ContactScreen(
@@ -407,4 +420,56 @@ fun CircleIcon(onImageClick: (String) -> Unit) {
             )
         }
     }
+}
+
+@Composable
+fun MapLibreCompose(
+    modifier: Modifier = Modifier,
+    initialPosition: LatLng,
+    initialZoom: Double = 10.0,
+    styleUrl: String = "https://demotiles.maplibre.org/style.json",
+    onMapReady: (MapLibreMap) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val lifeCycleOwner = LocalLifecycleOwner.current
+
+    var mapView by remember { mutableStateOf<MapView?>(null) }
+
+    DisposableEffect(lifeCycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when(event) {
+                Lifecycle.Event.ON_CREATE -> mapView?.onCreate(null)
+                Lifecycle.Event.ON_START -> mapView?.onStart()
+                Lifecycle.Event.ON_RESUME -> mapView?.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView?.onPause()
+                Lifecycle.Event.ON_STOP -> mapView?.onStop()
+                Lifecycle.Event.ON_DESTROY -> mapView?.onDestroy()
+                else -> {}
+            }
+        }
+        lifeCycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifeCycleOwner.lifecycle.removeObserver(observer)
+            mapView?.onDestroy()
+        }
+    }
+
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            MapView(context).apply {
+                mapView = this
+                getMapAsync { mapLibreMap ->
+                    mapLibreMap.cameraPosition = CameraPosition.Builder()
+                        .target(initialPosition)
+                        .zoom(initialZoom)
+                        .build()
+                    mapLibreMap.setStyle(styleUrl) { style ->
+                        onMapReady(mapLibreMap)
+                    }
+
+                }
+            }
+        }
+    )
 }

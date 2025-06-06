@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.prepkit.R
 
-
 @Composable
 fun CompassScreen(azimuth: State<Float>, latitude: State<Float>, longitude: State<Float>) {
     val animatedAzimuth by animateFloatAsState(

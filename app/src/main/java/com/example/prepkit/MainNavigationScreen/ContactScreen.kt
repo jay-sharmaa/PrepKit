@@ -432,7 +432,6 @@ fun PeerListScreen(
             .padding(16.dp)
     ) {
         if (!isVisible) {
-            // Centered Search Button
             Button(
                 onClick = onSearch,
                 modifier = Modifier.align(Alignment.Center)
@@ -440,7 +439,6 @@ fun PeerListScreen(
                 Text("Search Peers", textAlign = TextAlign.Center)
             }
         } else {
-            // Peers list shown below the button
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

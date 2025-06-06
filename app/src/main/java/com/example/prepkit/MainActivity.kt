@@ -1,5 +1,6 @@
 package com.example.prepkit
 
+import PlantClassifierScreen
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
@@ -57,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -75,6 +77,7 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.prepkit.MainNavigationScreen.CompassScreen
 import com.example.prepkit.MainNavigationScreen.ContactScreen
@@ -310,6 +313,8 @@ fun MainScreen(
     manager: WifiP2pManager,
     channel: WifiP2pManager.Channel,
 ) {
+    val currentHomeRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    Log.d("Navigation ", currentHomeRoute.toString())
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedNavHost(
             navController = navController,
@@ -399,7 +404,7 @@ fun CircleIcon(onImageClick: (String) -> Unit) {
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(Color.Magenta)
+                .background(Color.DarkGray)
         )
 
         images.forEachIndexed { index, resId ->
@@ -409,7 +414,7 @@ fun CircleIcon(onImageClick: (String) -> Unit) {
             Image(
                 painter = painterResource(id = resId),
                 contentDescription = "Image $index",
-                colorFilter = ColorFilter.tint(color = Color.Black),
+                colorFilter = ColorFilter.tint(color = Color.White),
                 modifier = Modifier
                     .size(size)
                     .offset(offset.x.dp, offset.y.dp)
@@ -467,7 +472,6 @@ fun MapLibreCompose(
                     mapLibreMap.setStyle(styleUrl) { style ->
                         onMapReady(mapLibreMap)
                     }
-
                 }
             }
         }

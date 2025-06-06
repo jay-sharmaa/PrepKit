@@ -1,5 +1,6 @@
 package com.example.prepkit.MainNavigationScreen
 
+import PlantClassifierScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -24,6 +25,9 @@ fun InfoScreen(){
         ) { backStackEntry ->
             val dataId = backStackEntry.arguments?.getString("id")
             SurviveKnowledge(dataId!!)
+        }
+        composable("PlantsClassification") {
+            PlantClassifierScreen()
         }
     }
 }

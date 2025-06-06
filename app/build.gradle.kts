@@ -16,6 +16,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            //noinspection ChromeOsAbiSupport
+            abiFilters += setOf("armeabi-v7a", "arm64-v8a")
+        }
     }
 
     buildTypes {
@@ -40,6 +44,16 @@ android {
 }
 
 dependencies {
+    //pytorch model load
+    implementation("org.pytorch:pytorch_android_lite:1.13.1")
+    implementation("org.pytorch:pytorch_android_torchvision_lite:1.13.1")
+
+    //camera handling
+    implementation("androidx.camera:camera-camera2:1.2.0")
+    implementation("androidx.camera:camera-lifecycle:1.2.0")
+    implementation("androidx.camera:camera-view:1.2.0")
+    implementation("io.coil-kt:coil-compose:2.2.2")
+
     //map
     implementation("org.maplibre.gl:android-sdk:11.5.1")
 

@@ -1,5 +1,6 @@
 package com.example.prepkit.MainNavigationScreen
 
+import PlantClassifierScreen
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -41,11 +42,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.prepkit.PlantClassifierManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -119,8 +122,51 @@ fun SurvivalScreen(navController: NavHostController) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .clickable(
+                        onClick = {
+                            navController.navigate("PlantsClassification")
+                        }
+                    )
             ) {
-                // Intentionally left empty for spacing
+                PlantsImage()
+            }
+        }
+    }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun PlantsImage(){
+    val context = LocalContext.current
+    val imageBitmaps = remember {
+        val input = context.assets.open("plants_image.jpeg")
+        val bitmap = BitmapFactory.decodeStream(input)
+        input.close()
+        bitmap.asImageBitmap()
+    }
+    Card(
+        modifier = Modifier.fillMaxSize(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ){
+            Text("Identify The Plants \nYou Want",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 12.dp))
+            Card(
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Image(
+                    painter = BitmapPainter(imageBitmaps),
+                    contentDescription = "",
+                )
             }
         }
     }
@@ -201,7 +247,6 @@ fun AssetImageCarousel(
                             )
                     )
 
-                    // Tap to explore indicator
                     Card(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)

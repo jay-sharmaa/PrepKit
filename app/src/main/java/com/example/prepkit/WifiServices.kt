@@ -146,10 +146,8 @@ object WifiDirectSocketManager {
             val input = client.getInputStream()
             val output = client.getOutputStream()
 
-            // Example: Send data to client
             output.write("Hello from server".toByteArray())
 
-            // Example: Read data from client
             val buffer = ByteArray(1024)
             val bytesRead = input.read(buffer)
             val message = String(buffer, 0, bytesRead)

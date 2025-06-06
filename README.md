@@ -14,10 +14,35 @@
 # Advanced Features
 
 **1]** Can Communicate With Your Group Even When Out Off Cellular Range via help of bluetooth **LTE-5** and wifi-direct communication with help of **BroadCast-Services**.<br />
-**2]** Can Form Groups Upto 8 People(in ideal communication) with BlueTooth.__
-**3]** Can Use Pytorch Custom Model To Identify Local **Floral** And **Fauna** Lifes.__
+**2]** Can Form Groups Upto 8 People(in ideal communication) with BlueTooth.<br />
+**3]** Can Use Pytorch Custom Model To Identify Local **Floral** And **Fauna** Lifes.<br />
 
 | Service | Range | Power Consumption
 |------|----------|---------|
 | **BlueTooth**    | **50m - 100m**   | **Low** | 
 | **Wifi**    | **100m - 200m**   | **High** |
+
+# Project Implementation
+
+**Home**
+
+**Explore**
+
+
+**Destination You Can Visit**
+
+
+**Identifying Floral And Fauna Life**
+
+
+**Communication With Wifi**
+
+
+**Communication With BlueTooth**
+
+
+**Communication With SOS**
+
+
+**Compass**
+

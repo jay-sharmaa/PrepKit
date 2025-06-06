@@ -33,7 +33,7 @@
 **Explore**
 
 <p float="left">
-  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img9.jpg"/>
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img9.jpg" width="200"/>
 <p/>
 
 **Destination You Can Visit**

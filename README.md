@@ -26,23 +26,47 @@
 
 **Home**
 
+<p float="left">
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img10.jpg" width="200"/>
+</p>
+
 **Explore**
 
+<p float="left">
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img9.jpg" width="200"/>
+<p/>
 
 **Destination You Can Visit**
 
+<p float="left">
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img6.jpg" width="200"/>
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img7.jpg" width="200"/>
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img8.jpg" width="200"/>
+<p/>
 
 **Identifying Floral And Fauna Life**
 
-
 **Communication With Wifi**
 
+<p float="left">
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img4.jpg" width="200"/>
+</p>
 
 **Communication With BlueTooth**
 
+<p float="left">
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img2.jpg" width="200"/>
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img3.jpg" width="200"/>
+</p>
 
-**Communication With SOS**
+**SOS Signal**
 
+<p float="left">
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img1.jpg" width="200"/>
+</p>
 
 **Compass**
 
+<p float="left">
+  <img src="https://github.com/jay-sharmaa/PrepKit/blob/main/implimages/img5.jpg" width="200"/>
+</p>

@@ -75,7 +75,6 @@ fun SurviveKnowledge(dataId : String){
     }
 }
 
-
 @Composable
 fun PlaceHeader(placeName: String) {
     Card(

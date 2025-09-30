@@ -122,12 +122,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     private val intentFilter = IntentFilter()
 
-    val permissions = listOf(
-        Manifest.permission.BLUETOOTH_SCAN,
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.BLUETOOTH_CONNECT
-    )
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private val PermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
